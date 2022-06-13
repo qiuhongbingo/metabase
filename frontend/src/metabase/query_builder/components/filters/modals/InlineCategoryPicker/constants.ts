@@ -1,1 +1,1 @@
-export const MAX_INLINE_CATEGORIES = 12;
+export const MAX_INLINE_CATEGORIES = 16;

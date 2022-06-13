@@ -2,14 +2,15 @@ import React, { useMemo, useCallback } from "react";
 
 import Filter from "metabase-lib/lib/queries/structured/Filter";
 import Dimension from "metabase-lib/lib/Dimension";
+import Field from "metabase-lib/lib/metadata/Field";
+
 import StructuredQuery from "metabase-lib/lib/queries/StructuredQuery";
 import { isBoolean } from "metabase/lib/schema_metadata";
+import Fields from "metabase/entities/fields";
 
 import { BooleanPickerCheckbox } from "metabase/query_builder/components/filters/pickers/BooleanPicker";
 import { BulkFilterSelect } from "../BulkFilterSelect";
 import { InlineCategoryPicker } from "../InlineCategoryPicker";
-import { InlineKeyPicker } from "../InlineKeyPicker";
-
 import { SEMANTIC_FIELD_FILTERS, BASE_FIELD_FILTERS } from "./constants";
 
 export interface BulkFilterItemProps {
@@ -30,18 +31,15 @@ export const BulkFilterItem = ({
   onRemoveFilter,
 }: BulkFilterItemProps): JSX.Element => {
   const fieldType = useMemo(() => {
-    const field = dimension.field();
+    const semanticType = dimension.field().semantic_type ?? "";
+    const baseType = dimension.field().base_type ?? "";
 
-    if (BASE_FIELD_FILTERS.includes(field.base_type ?? "")) {
-      return field.base_type;
+    if (BASE_FIELD_FILTERS.includes(baseType)) {
+      return baseType;
     }
 
-    if (field.has_field_values === "list") {
-      return "type/Category";
-    }
-
-    if (SEMANTIC_FIELD_FILTERS.includes(field.semantic_type ?? "")) {
-      return field.semantic_type;
+    if (SEMANTIC_FIELD_FILTERS.includes(semanticType)) {
+      return semanticType;
     }
   }, [dimension]);
 
@@ -52,6 +50,7 @@ export const BulkFilterItem = ({
 
   const handleChange = useCallback(
     (newFilter: Filter) => {
+      console.log("new", newFilter);
       filter ? onChangeFilter(filter, newFilter) : onAddFilter(newFilter);
     },
     [filter, onAddFilter, onChangeFilter],
@@ -80,15 +79,6 @@ export const BulkFilterItem = ({
           dimension={dimension}
           handleChange={handleChange}
           handleClear={handleClear}
-        />
-      );
-    case "type/PK":
-    case "type/FK":
-      return (
-        <InlineKeyPicker
-          filter={filter ?? newFilter}
-          field={dimension.field()}
-          handleChange={handleChange}
         />
       );
     default:

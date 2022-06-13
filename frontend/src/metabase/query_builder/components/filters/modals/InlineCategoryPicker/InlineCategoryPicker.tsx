@@ -1,95 +1,58 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { connect } from "react-redux";
-import { t } from "ttag";
 
 import Filter from "metabase-lib/lib/queries/structured/Filter";
-import Fields from "metabase/entities/fields";
 import StructuredQuery from "metabase-lib/lib/queries/StructuredQuery";
 import Dimension from "metabase-lib/lib/Dimension";
-import { useSafeAsyncFunction } from "metabase/hooks/use-safe-async-function";
-
-import Warnings from "metabase/query_builder/components/Warnings";
+import Field from "metabase-lib/lib/metadata/Field";
 import Checkbox from "metabase/core/components/CheckBox";
+import { MetabaseApi } from "metabase/services";
 
 import { MAX_INLINE_CATEGORIES } from "./constants";
-import {
-  PickerContainer,
-  PickerGrid,
-  Loading,
-} from "./InlineCategoryPicker.styled";
+import { PickerContainer, PickerGrid } from "./InlineCategoryPicker.styled";
 import { BulkFilterSelect } from "../BulkFilterSelect";
-
-const mapStateToProps = (state: any, props: any) => {
-  const fieldId = props.dimension?.field?.()?.id;
-  const fieldValues =
-    fieldId != null
-      ? Fields.selectors.getFieldValues(state, {
-          entityId: fieldId,
-        })
-      : [];
-  return {
-    fieldValues: fieldValues || [],
-  };
-};
-
-const mapDispatchToProps = {
-  fetchFieldValues: Fields.actions.fetchFieldValues,
-};
+import { P } from "cljs/goog.dom.tagname";
 
 interface InlineCategoryPickerProps {
   query: StructuredQuery;
   filter?: Filter;
   newFilter: Filter;
   dimension: Dimension;
-  fieldValues: any[];
-  fetchFieldValues: ({ id }: { id: number }) => Promise<any>;
   handleChange: (newFilter: Filter) => void;
   handleClear: () => void;
 }
 
-export function InlineCategoryPickerComponent({
+export function InlineCategoryPicker({
   query,
   filter,
   newFilter,
   handleChange,
-  fieldValues,
-  fetchFieldValues,
   dimension,
   handleClear,
 }: InlineCategoryPickerProps) {
-  const safeFetchFieldValues = useSafeAsyncFunction(fetchFieldValues);
-
-  const shouldFetchFieldValues = !dimension?.field()?.hasFieldValues();
-  const [isLoading, setIsLoading] = useState(shouldFetchFieldValues);
-  const [hasError, setHasError] = useState(false);
+  const [fieldValues, setFieldValues] = useState<null | (string | number)[]>(
+    null,
+  );
 
   useEffect(() => {
-    if (!shouldFetchFieldValues) {
-      setIsLoading(false);
+    const field = dimension.field();
+    if (field.hasFieldValues()) {
+      setFieldValues(field.fieldValues());
       return;
     }
-    const field = dimension.field();
-    safeFetchFieldValues({ id: field.id })
-      .then(() => {
-        setIsLoading(false);
+    MetabaseApi.field_values({
+      fieldId: field.id,
+      limit: MAX_INLINE_CATEGORIES + 1,
+    })
+      .then(response => {
+        setFieldValues(response.values.flat());
       })
       .catch(() => {
-        setHasError(true);
+        throw new Error("Failed to load field values");
       });
-  }, [dimension, safeFetchFieldValues, shouldFetchFieldValues]);
+  }, [dimension]);
 
-  if (hasError) {
-    return (
-      <Warnings
-        warnings={[
-          t`There was an error loading the field values for this field`,
-        ]}
-      />
-    );
-  }
-
-  if (isLoading) {
-    return <Loading size={20} />;
+  if (!fieldValues) {
+    return <div>loading</div>;
   }
 
   if (fieldValues.length <= MAX_INLINE_CATEGORIES) {
@@ -97,11 +60,10 @@ export function InlineCategoryPickerComponent({
       <SimpleCategoryFilterPicker
         filter={filter ?? newFilter}
         handleChange={handleChange}
-        options={fieldValues.flat()}
+        options={fieldValues}
       />
     );
   }
-
   return (
     <BulkFilterSelect
       query={query}
@@ -134,13 +96,15 @@ export function SimpleCategoryFilterPicker({
         ? [...filterValues, option]
         : filterValues.filter(o => o !== option);
 
+      console.log("newArgs", newArgs);
+
       handleChange(filter.setArguments(newArgs));
     },
     [filterValues, handleChange, filter],
   );
 
   return (
-    <PickerContainer data-testid="category-picker">
+    <PickerContainer>
       <PickerGrid>
         {options.map((option: string | number) => (
           <Checkbox
@@ -155,8 +119,3 @@ export function SimpleCategoryFilterPicker({
     </PickerContainer>
   );
 }
-
-export const InlineCategoryPicker = connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(InlineCategoryPickerComponent);
