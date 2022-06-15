@@ -86,7 +86,12 @@ const BulkFilterListItem = ({
   onRemoveFilter,
 }: BulkFilterListItemProps): JSX.Element => {
   const options = useMemo(() => {
-    return filters.filter(f => f.dimension()?.isSameBaseDimension(dimension));
+    const filtersForThisDimension = filters.filter(f =>
+      f.dimension()?.isSameBaseDimension(dimension),
+    );
+    return filtersForThisDimension.length
+      ? filtersForThisDimension
+      : [undefined];
   }, [filters, dimension]);
 
   return (
@@ -106,15 +111,6 @@ const BulkFilterListItem = ({
             onRemoveFilter={onRemoveFilter}
           />
         ))}
-        {!options.length && (
-          <BulkFilterItem
-            query={query}
-            dimension={dimension}
-            onAddFilter={onAddFilter}
-            onChangeFilter={onChangeFilter}
-            onRemoveFilter={onRemoveFilter}
-          />
-        )}
       </>
     </ListRow>
   );
