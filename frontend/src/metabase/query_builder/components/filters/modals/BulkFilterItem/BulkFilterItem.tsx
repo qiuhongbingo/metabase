@@ -3,12 +3,14 @@ import React, { useMemo, useCallback } from "react";
 import Filter from "metabase-lib/lib/queries/structured/Filter";
 import Dimension from "metabase-lib/lib/Dimension";
 import StructuredQuery from "metabase-lib/lib/queries/StructuredQuery";
-import { isBoolean } from "metabase/lib/schema_metadata";
+import { isBoolean, isString } from "metabase/lib/schema_metadata";
 
 import { BooleanPickerCheckbox } from "metabase/query_builder/components/filters/pickers/BooleanPicker";
 import { BulkFilterSelect } from "../BulkFilterSelect";
 import { InlineCategoryPicker } from "../InlineCategoryPicker";
-import { SEMANTIC_FIELD_FILTERS, BASE_FIELD_FILTERS } from "./constants";
+import { InlineValuePicker } from "../InlineValuePicker";
+
+import { FIELD_TYPE_PRIORITY } from "./constants";
 
 export interface BulkFilterItemProps {
   query: StructuredQuery;
@@ -30,16 +32,16 @@ export const BulkFilterItem = ({
   const fieldType = useMemo(() => {
     const field = dimension.field();
 
-    if (BASE_FIELD_FILTERS.includes(field.base_type ?? "")) {
-      return field.base_type;
+    const relevantFieldType = FIELD_TYPE_PRIORITY.find(t =>
+      [field.semantic_type, field.base_type].includes(t),
+    );
+
+    if (relevantFieldType) {
+      return relevantFieldType;
     }
 
     if (field.has_field_values === "list") {
       return "type/Category";
-    }
-
-    if (SEMANTIC_FIELD_FILTERS.includes(field.semantic_type ?? "")) {
-      return field.semantic_type;
     }
   }, [dimension]);
 
@@ -80,6 +82,16 @@ export const BulkFilterItem = ({
           handleClear={handleClear}
         />
       );
+    case "type/PK":
+    case "type/FK":
+    case "type/Text":
+      return (
+        <InlineValuePicker
+          filter={filter ?? newFilter}
+          field={dimension.field()}
+          handleChange={handleChange}
+        />
+      );
     default:
       return (
         <BulkFilterSelect
@@ -94,10 +106,17 @@ export const BulkFilterItem = ({
 };
 
 const getNewFilter = (query: StructuredQuery, dimension: Dimension): Filter => {
-  const filter = new Filter([], null, dimension.query() ?? query);
-  const isBooleanField = isBoolean(dimension.field());
+  let filter = new Filter([], null, dimension.query() ?? query);
+  const field = dimension.field();
+  const isBooleanField = isBoolean(field);
+  const isTextField = isString(field);
 
-  return filter.setDimension(dimension.mbql(), {
+  filter = filter.setDimension(dimension.mbql(), {
     useDefaultOperator: !isBooleanField,
   });
+
+  if (isTextField) {
+    filter = filter.setOperator("contains");
+  }
+  return filter;
 };
