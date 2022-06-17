@@ -4,13 +4,18 @@ import { t } from "ttag";
 import cx from "classnames";
 import _ from "underscore";
 
-import { getParameterIconName } from "metabase/parameters/utils/ui";
-import { isDashboardParameterWithoutMapping } from "metabase/parameters/utils/dashboards";
+import {
+  getParameterIconName,
+  getParameterWidgetTitle,
+} from "metabase/parameters/utils/ui";
 import {
   isDateParameter,
   isNumberParameter,
 } from "metabase/parameters/utils/parameter-type";
-import { getNumberParameterArity } from "metabase/parameters/utils/operators";
+import {
+  getNumberParameterArity,
+  getStringParameterArity,
+} from "metabase/parameters/utils/operators";
 
 import PopoverWithTrigger from "metabase/components/PopoverWithTrigger";
 import Icon from "metabase/components/Icon";
@@ -25,6 +30,7 @@ import TextWidget from "metabase/components/TextWidget";
 import WidgetStatusIcon from "metabase/parameters/components/WidgetStatusIcon";
 import FormattedParameterValue from "metabase/parameters/components/FormattedParameterValue";
 import NumberInputWidget from "metabase/parameters/components/widgets/NumberInputWidget";
+import StringInputWidget from "metabase/parameters/components/widgets/StringInputWidget";
 
 import ParameterFieldWidget from "./widgets/ParameterFieldWidget/ParameterFieldWidget";
 import S from "./ParameterWidget.css";
@@ -92,14 +98,10 @@ class ParameterValueWidget extends Component {
       isFullscreen,
       noReset,
       className,
-      dashboard,
     } = this.props;
     const { isFocused } = this.state;
     const hasValue = value != null;
-    const isDashParamWithoutMapping = isDashboardParameterWithoutMapping(
-      parameter,
-      dashboard,
-    );
+    const isDashParamWithoutMapping = false;
     const isDashParamWithoutMappingText = t`This filter needs to be connected to a card.`;
     const { noPopover } = getWidgetDefinition(parameter);
     const parameterTypeIcon = getParameterIconName(parameter);
@@ -291,14 +293,17 @@ function Widget({
     );
   } else {
     return (
-      <TextWidget
-        value={value}
-        setValue={setValue}
+      <StringInputWidget
+        value={normalizedValue}
+        setValue={value => {
+          setValue(value);
+          onPopoverClose();
+        }}
         className={className}
-        isEditing={isEditing}
-        commitImmediately={commitImmediately}
-        placeholder={placeholder}
-        focusChanged={onFocusChanged}
+        autoFocus
+        placeholder={isEditing ? t`Enter a default value…` : undefined}
+        arity={getStringParameterArity(parameter)}
+        title={getParameterWidgetTitle(parameter)}
       />
     );
   }
@@ -320,6 +325,6 @@ function getWidgetDefinition(parameter) {
   } else if (!_.isEmpty(parameter.fields)) {
     return ParameterFieldWidget;
   } else {
-    return TextWidget;
+    return StringInputWidget;
   }
 }
