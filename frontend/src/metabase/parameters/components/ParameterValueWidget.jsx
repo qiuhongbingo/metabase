@@ -4,7 +4,10 @@ import { t } from "ttag";
 import cx from "classnames";
 import _ from "underscore";
 
-import { getParameterIconName } from "metabase/parameters/utils/ui";
+import {
+  getParameterIconName,
+  getParameterWidgetTitle,
+} from "metabase/parameters/utils/ui";
 import { isDashboardParameterWithoutMapping } from "metabase/parameters/utils/dashboards";
 import { isOnlyMappedToFields } from "metabase/parameters/utils/fields";
 import {
@@ -260,6 +263,7 @@ function Widget({
           }
           autoFocus
           placeholder={isEditing ? t`Enter a default value…` : undefined}
+          title={getParameterWidgetTitle(parameter)}
         />
       );
     }
