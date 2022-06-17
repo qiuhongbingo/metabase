@@ -9,6 +9,7 @@ import { BooleanPickerCheckbox } from "metabase/query_builder/components/filters
 import { BulkFilterSelect } from "../BulkFilterSelect";
 import { InlineCategoryPicker } from "../InlineCategoryPicker";
 import { InlineValuePicker } from "../InlineValuePicker";
+import { InlineDatePicker } from "../InlineDatePicker";
 
 import { FIELD_TYPE_PRIORITY } from "./constants";
 
@@ -31,6 +32,8 @@ export const BulkFilterItem = ({
 }: BulkFilterItemProps): JSX.Element => {
   const fieldType = useMemo(() => {
     const field = dimension.field();
+
+    console.log(field.displayName(), field.base_type, field.semantic_type);
 
     const relevantFieldType = FIELD_TYPE_PRIORITY.find(t =>
       [field.semantic_type, field.base_type, field.has_field_values].includes(
@@ -86,6 +89,18 @@ export const BulkFilterItem = ({
     case "type/Text":
       return (
         <InlineValuePicker
+          filter={filter ?? newFilter}
+          field={dimension.field()}
+          handleChange={handleChange}
+        />
+      );
+    case "type/DateTime":
+    case "type/DateTimeWithTZ":
+    case "type/DateTimeWithLocalTZ":
+    case "type/DateTimeWithZoneOffset":
+    case "type/DateTimeWithZoneID":
+      return (
+        <InlineDatePicker
           filter={filter ?? newFilter}
           field={dimension.field()}
           handleChange={handleChange}

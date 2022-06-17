@@ -133,6 +133,12 @@ const MISC_OPTIONS: Option[] = [
   },
 ];
 
+export const OPTIONS = {
+  DAY_OPTIONS,
+  MONTH_OPTIONS,
+  MISC_OPTIONS,
+};
+
 type Props = {
   className?: string;
   primaryColor?: string;
