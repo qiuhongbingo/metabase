@@ -33,8 +33,6 @@ export const BulkFilterItem = ({
   const fieldType = useMemo(() => {
     const field = dimension.field();
 
-    console.log(field.displayName(), field.base_type, field.semantic_type);
-
     const relevantFieldType = FIELD_TYPE_PRIORITY.find(t =>
       [field.semantic_type, field.base_type, field.has_field_values].includes(
         t,
@@ -101,9 +99,12 @@ export const BulkFilterItem = ({
     case "type/DateTimeWithZoneID":
       return (
         <InlineDatePicker
-          filter={filter ?? newFilter}
-          field={dimension.field()}
+          query={query}
+          filter={filter}
+          newFilter={newFilter}
+          dimension={dimension}
           handleChange={handleChange}
+          handleClear={handleClear}
         />
       );
     default:
