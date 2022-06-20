@@ -101,14 +101,14 @@
       (is (= nil
              (#'field-values/distinct-values {}))))))
 
-(deftest clear-field-values!-test
+(deftest clear-field-values-for-field!-test
   (mt/with-temp* [Database    [{database-id :id}]
                   Table       [{table-id :id} {:db_id database-id}]
                   Field       [{field-id :id} {:table_id table-id}]
                   FieldValues [_              {:field_id field-id, :values "[1,2,3]"}]]
     (is (= [1 2 3]
            (db/select-one-field :values FieldValues, :field_id field-id)))
-    (#'field-values/clear-field-values! field-id)
+    (field-values/clear-field-values-for-field! field-id)
     (is (= nil
            (db/select-one-field :values FieldValues, :field_id field-id)))))
 

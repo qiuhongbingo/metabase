@@ -42,10 +42,6 @@
                                                        (recur field user-id user-permissions-set))
       :else fv)))
 
-(defn- fetch-sandboxed-field-values
-  [field]
-  (get-or-create-sandboxed-field-values! field api/*current-user-id* @api/*current-user-permissions-set*))
-
 (defn- field-is-sandboxed?
   [{:keys [table], :as field}]
   ;; slight optimization: for the `field-id->field-values` version we can batched hydrate `:table` to avoid having to
@@ -59,6 +55,5 @@
   :feature :sandboxes
   [field]
   (if (field-is-sandboxed? field)
-    ;; if sandboxing is in effect we never actually "save" the FieldValues the way the OSS/non-sandboxed impl does.
-    (fetch-sandboxed-field-values field)
+    (get-or-create-sandboxed-field-values! field api/*current-user-id* @api/*current-user-permissions-set*)
     (params.field-values/default-get-or-create-field-values-for-current-user! field)))
