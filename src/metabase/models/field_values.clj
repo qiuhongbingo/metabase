@@ -273,7 +273,7 @@
                        field-name (count values))
                   (trs "Switching Field to use a search widget instead."))
         (db/update! 'Field (u/the-id field) :has_field_values nil)
-        (clear-field-values! field)
+        (clear-field-values-for-field! field)
         ::fv-deleted)
 
       (= (:values field-values) values)
@@ -301,7 +301,7 @@
       ;; otherwise this Field isn't eligible, so delete any FieldValues that might exist
       :else
       (do
-        (clear-field-values! field)
+        (clear-field-values-for-field! field)
         ::fv-deleted))))
 
 (defn get-or-create-field-values!
