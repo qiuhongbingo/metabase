@@ -12,7 +12,7 @@
             [toucan.db :as db]))
 
 (defn- venues-price-field-values []
-  (db/select-one-field :values FieldValues, :field_id (mt/id :venues :price)))
+  (db/select-one-field :values FieldValues, :field_id (mt/id :venues :price), :type :full))
 
 (defn- sync-database!' [step database]
   (let [{:keys [step-info task-history]} (sync.util-test/sync-database! step database)]
@@ -42,7 +42,7 @@
       (is (= [1 2 3 4]
              (venues-price-field-values))))
     (testing "Update the FieldValues, remove one of the values that should be there"
-      (db/update! FieldValues (db/select-one-id FieldValues :field_id (mt/id :venues :price)) :values [1 2 3])
+      (db/update! FieldValues (db/select-one-id FieldValues :field_id (mt/id :venues :price) :type :full) :values [1 2 3])
       (is (= [1 2 3]
              (venues-price-field-values))))
     (testing "Now re-sync the table and validate the field values updated"

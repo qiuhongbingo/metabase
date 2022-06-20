@@ -229,6 +229,43 @@
                              :human_readable_values []}
                             (field-values))))))))))
 
+;;; +----------------------------------------------------------------------------------------------------------------+
+;;; |                                                 Life Cycle                                                     |
+;;; +----------------------------------------------------------------------------------------------------------------+
+
+(deftest insert-field-values-type-test
+  (testing "fieldvalues type=:full shouldn't have hash_key"
+    (is (thrown-with-msg?
+          clojure.lang.ExceptionInfo
+          #"Full FieldValues shouldnt have hash_key"
+          (mt/with-temp FieldValues [_ {:field_id (mt/id :venues :id)
+                                        :type :full
+                                        :hash_key "random-hash"}]))))
+
+  (testing "Advanced fieldvalues requires a hash_key"
+    (is (thrown-with-msg?
+          clojure.lang.ExceptionInfo
+          #"Advanced FieldValues requires a hash_key"
+          (mt/with-temp FieldValues [_ {:field_id (mt/id :venues :id)
+                                        :type :sandbox}])))))
+
+(deftest insert-full-field-values-should-remove-all-cached-field-values
+  (mt/with-temp* [FieldValues [sandbox-fv {:field_id (mt/id :venues :id)
+                                           :type     :sandbox
+                                           :hash_key "random-hash"}]]
+    (db/insert! FieldValues {:field_id (mt/id :venues :id)
+                             :type     :full})
+    (is (not (db/exists? FieldValues :id (:id sandbox-fv))))))
+
+(deftest update-full-field-values-should-remove-all-cached-field-values
+  (mt/with-temp* [FieldValues [fv         {:field_id (mt/id :venues :id)
+                                           :type     :full}]
+                  FieldValues [sandbox-fv {:field_id (mt/id :venues :id)
+                                           :type     :sandbox
+                                           :hash_key "random-hash"}]]
+    (db/update! FieldValues (:id fv) :values [1 2 3])
+    (is (not (db/exists? FieldValues :id (:id sandbox-fv))))))
+
 (deftest identity-hash-test
   (testing "Field hashes are composed of the name and the table's identity-hash"
     (mt/with-temp* [Database    [db    {:name "field-db" :engine :h2}]
